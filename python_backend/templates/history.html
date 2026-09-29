@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Recommendation History - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="navbar">
+    <a href="/dashboard" class="brand">PocketSmart</a>
+    <div class="nav-links">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/home-planner">Home Planner</a>
+      <a href="/party-planner">Party Planner</a>
+      <a href="/jewelry-planner">Jewelry Planner</a>
+      <a href="/history" class="active">History</a>
+    </div>
+  </header>
+
+  <section class="hero" style="padding: 3rem 1.5rem;">
+    <h1>Your Recommendation History</h1>
+    <p>View and manage all your previous budget plans and recommendations</p>
+  </section>
+
+  <main class="container" style="margin-top: -1.5rem;">
+    <div class="card">
+      <div class="card-header" style="background:#1e293b; color:white;">Recent Recommendations</div>
+      <div class="card-body">
+        {% if history %}
+          <div class="grid-3">
+            {% for item in history %}
+              <div class="card" style="box-shadow:none; border:1px solid var(--border-color);">
+                <div class="card-header" style="text-transform:capitalize; font-size:0.85rem; display:flex; justify-content:space-between;">
+                  <span>{{ item.type }} Budget</span>
+                  <span style="font-size:0.75rem; color:var(--text-muted);">{{ item.timestamp[:10] }}</span>
+                </div>
+                <div class="card-body" style="font-size:0.85rem;">
+                  <p><strong>Total Budget:</strong> ₹{{ item.result_summary.total_budget }}</p>
+                  <p><strong>Remaining:</strong> ₹{{ item.result_summary.remaining_budget }}</p>
+                  <p style="color:var(--text-muted); margin-top:0.4rem;">{{ item.result_summary.highlight }}</p>
+                  <button onclick="alert('Full details:\n' + JSON.stringify({{ item.full_result | tojson }}, null, 2))" class="btn btn-primary" style="margin-top:1rem; width:100%; font-size:0.75rem; padding:0.4rem;">
+                    View Full Details
+                  </button>
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+        {% else %}
+          <p style="text-align:center; color:var(--text-muted); padding:2rem;">No saved recommendations found.</p>
+        {% endif %}
+      </div>
+    </div>
+  </main>
+</body>
+</html>

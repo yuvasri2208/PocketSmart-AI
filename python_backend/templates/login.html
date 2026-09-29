@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sign In - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body style="display:flex; flex-direction:column; min-height:100vh;">
+  <header class="navbar">
+    <a href="/" class="brand">PocketSmart</a>
+    <div class="nav-links">
+      <a href="/register">Create Account</a>
+    </div>
+  </header>
+
+  <main style="flex:1; display:flex; align-items:center; justify-content:center; padding:2rem 1rem;">
+    <div class="card" style="max-width: 400px; width: 100%;">
+      <div class="card-header" style="text-align:center; background:#fff; border-bottom:none; padding-top:2rem;">
+        <h2 style="font-size:1.5rem; color:#1e293b;">Welcome Back</h2>
+        <p style="font-size:0.8rem; color:var(--text-muted); margin-top:0.3rem;">Sign in to access your dashboard</p>
+      </div>
+      <div class="card-body">
+        <form action="/token" method="post" id="loginForm">
+          <div class="form-group">
+            <label for="username">Username</label>
+            <input type="text" id="username" name="username" class="form-control" value="sai" required>
+          </div>
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="form-control" value="password123" required>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width:100%; margin-top:1rem;">Sign In →</button>
+        </form>
+        <p style="text-align:center; font-size:0.8rem; color:var(--text-muted); margin-top:1.5rem;">
+          Don't have an account? <a href="/register" style="color:var(--accent); font-weight:600;">Create Account</a>
+        </p>
+      </div>
+    </div>
+  </main>
+  <script>
+    document.getElementById('loginForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.target);
+      const res = await fetch('/token', { method: 'POST', body: formData });
+      if (res.ok) {
+        window.location.href = '/dashboard';
+      } else {
+        alert('Invalid username or password');
+      }
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "PocketSmart AI - Smart Budget & Recommendation Assistant",
+  "description": "GenAI-powered budget-based recommendation assistant for home interiors, party planning, and occasion jewelry selection using Google Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

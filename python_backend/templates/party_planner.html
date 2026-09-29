@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Party Budget Planner - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="navbar">
+    <a href="/dashboard" class="brand">PocketSmart</a>
+    <div class="nav-links">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/home-planner">Home Planner</a>
+      <a href="/party-planner" class="active">Party Planner</a>
+      <a href="/jewelry-planner">Jewelry Planner</a>
+      <a href="/history">History</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div style="text-align:center; margin-bottom: 2rem;">
+      <h1 style="font-size:1.8rem; font-weight:800;">Party Budget Planner</h1>
+      <p style="color:var(--text-muted); font-size:0.9rem;">Plan your perfect event with AI-powered budget recommendations</p>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <form id="partyForm">
+          <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+            Basic Information
+          </h3>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Total Budget (INR ₹)</label>
+              <input type="number" id="budget" class="form-control" value="5000" required>
+            </div>
+            <div class="form-group">
+              <label>Number of Guests</label>
+              <input type="number" id="guests" class="form-control" value="3" required>
+            </div>
+          </div>
+
+          <h3 style="font-size:1rem; font-weight:700; margin:1.5rem 0 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+            Event Details
+          </h3>
+          <div class="grid-2">
+            <div class="form-group">
+              <label>Party Type</label>
+              <select id="partyType" class="form-control">
+                <option value="Wedding">Wedding</option>
+                <option value="Birthday">Birthday</option>
+                <option value="Anniversary">Anniversary</option>
+                <option value="Corporate Event">Corporate Event</option>
+                <option value="House Party">House Party</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Venue Type</label>
+              <select id="venueType" class="form-control">
+                <option value="Home">Home</option>
+                <option value="Banquet Hall">Banquet Hall</option>
+                <option value="Resort">Resort</option>
+                <option value="Hotel">Hotel</option>
+              </select>
+            </div>
+          </div>
+
+          <h3 style="font-size:1rem; font-weight:700; margin:1.5rem 0 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+            Party Needs
+          </h3>
+          <div style="display:flex; gap:1.5rem; margin-bottom:1.5rem;">
+            <label><input type="checkbox" id="catering" checked> Catering</label>
+            <label><input type="checkbox" id="decor" checked> Decoration</label>
+            <label><input type="checkbox" id="entertainment" checked> Entertainment</label>
+          </div>
+
+          <div class="form-group">
+            <label>Additional Requirements</label>
+            <textarea id="additional" class="form-control" rows="2" placeholder="Special requests, themes, dietary restrictions, etc."></textarea>
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%; padding:0.75rem;">
+            Generate Budget Plan
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Results Container -->
+    <div id="results" style="display:none; margin-top:2rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <h2 style="font-size:1.5rem; font-weight:800;">Your Party Budget Plan</h2>
+        <button onclick="window.print()" class="btn btn-primary" style="font-size:0.75rem; padding:0.4rem 0.8rem;">Print/Save</button>
+      </div>
+
+      <div class="card" style="padding:1.5rem;">
+        <div style="font-size:1.2rem; font-weight:700; margin-bottom:1rem;" id="partyBudgetSummary">Budget: ₹0</div>
+
+        <!-- Venue Block -->
+        <div id="venueContainer" style="margin-bottom:1.5rem;"></div>
+
+        <!-- Categories Block -->
+        <div id="categoriesContainer"></div>
+
+        <div style="margin-top:1.5rem; padding-top:1rem; border-top:1px solid var(--border-color); font-size:0.85rem;" id="calcTableContainer"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('partyForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.innerText = "Generating with Gemini AI...";
+      btn.disabled = true;
+
+      try {
+        const payload = {
+          total_budget: parseFloat(document.getElementById('budget').value),
+          num_guests: parseInt(document.getElementById('guests').value) || 1,
+          party_type: document.getElementById('partyType').value,
+          venue_type: document.getElementById('venueType').value,
+          needs_catering: document.getElementById('catering').checked,
+          needs_decoration: document.getElementById('decor').checked,
+          needs_entertainment: document.getElementById('entertainment').checked,
+          additional_requirements: document.getElementById('additional').value
+        };
+
+        const res = await fetch('/generate-party', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        document.getElementById('partyBudgetSummary').innerText = `Budget: ₹${data.total_budget}`;
+
+        // Venue block
+        const vc = document.getElementById('venueContainer');
+        vc.innerHTML = '';
+        if (data.venue_suggestions && data.venue_suggestions.length > 0) {
+          const v = data.venue_suggestions[0];
+          let vLinks = '';
+          for (const [k, url] of Object.entries(v.shopping_links || {})) {
+            vLinks += `<a href="${url}" target="_blank" class="shop-tag">${k}</a> `;
+          }
+          vc.innerHTML = `<div style="background:#f8fafc; border:1px solid var(--border-color); border-radius:0.5rem; padding:1rem;">
+            <div style="display:flex; justify-content:space-between; font-weight:700;">
+              <span>Venue: ${v.name}</span>
+              <span>₹${v.estimated_cost}</span>
+            </div>
+            <p style="font-size:0.8rem; color:var(--text-muted); margin:0.3rem 0;">${v.type} • Capacity: ${v.capacity}</p>
+            <div class="shop-links">${vLinks}</div>
+          </div>`;
+        }
+
+        // Categories
+        const cc = document.getElementById('categoriesContainer');
+        cc.innerHTML = '';
+        (data.budget_breakdown || []).forEach(cat => {
+          let itemsHtml = '';
+          cat.items.forEach(it => {
+            let linksHtml = '';
+            for (const [k, url] of Object.entries(it.shopping_links || {})) {
+              linksHtml += `<a href="${url}" target="_blank" class="shop-tag">${k}</a> `;
+            }
+            itemsHtml += `<div style="padding:0.8rem 0; border-bottom:1px solid #f1f5f9;">
+              <div style="display:flex; justify-content:space-between; font-weight:600;">
+                <span>${it.name}</span>
+                <span>₹${it.estimated_price}</span>
+              </div>
+              <p style="font-size:0.8rem; color:var(--text-muted); margin:0.2rem 0;">${it.description}</p>
+              <div class="shop-links">${linksHtml}</div>
+            </div>`;
+          });
+
+          cc.innerHTML += `<div style="margin-top:1rem; border:1px solid var(--border-color); border-radius:0.5rem; overflow:hidden;">
+            <div style="background:#f1f5f9; padding:0.6rem 1rem; font-weight:700; display:flex; justify-content:space-between;">
+              <span>${cat.category}</span>
+              <span>₹${cat.allocation}</span>
+            </div>
+            <div style="padding:0.5rem 1rem;">${itemsHtml}</div>
+          </div>`;
+        });
+
+        document.getElementById('results').style.display = 'block';
+        window.scrollTo({ top: document.getElementById('results').offsetTop, behavior: 'smooth' });
+      } catch (err) {
+        alert("Error generating recommendations: " + err.message);
+      } finally {
+        btn.innerText = "Generate Budget Plan";
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>

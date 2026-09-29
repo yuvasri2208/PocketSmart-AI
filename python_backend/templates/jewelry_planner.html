@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Jewelry Budget Planner - PocketSmart</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <header class="navbar">
+    <a href="/dashboard" class="brand">PocketSmart</a>
+    <div class="nav-links">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/home-planner">Home Planner</a>
+      <a href="/party-planner">Party Planner</a>
+      <a href="/jewelry-planner" class="active">Jewelry Planner</a>
+      <a href="/history">History</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div style="text-align:center; margin-bottom: 2rem;">
+      <h1 style="font-size:1.8rem; font-weight:800;">Jewelry Budget Planner</h1>
+      <p style="color:var(--text-muted); font-size:0.9rem;">Get AI-powered jewelry recommendations within your budget for any occasion</p>
+    </div>
+
+    <div class="card">
+      <div class="card-body">
+        <form id="jewelryForm" enctype="multipart/form-data">
+          <h3 style="font-size:1rem; font-weight:700; margin-bottom:1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+            Budget Details
+          </h3>
+          <div class="form-group">
+            <label>Total Budget (INR ₹)</label>
+            <input type="number" id="budget" name="total_budget" class="form-control" value="5000" required>
+          </div>
+
+          <h3 style="font-size:1rem; font-weight:700; margin:1.5rem 0 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+            Occasion & Preferences
+          </h3>
+          <div class="form-group">
+            <label>Occasion</label>
+            <input type="text" id="occasion" name="occasion" class="form-control" value="Birthday" required>
+          </div>
+          <div class="form-group">
+            <label>Style Preferences</label>
+            <textarea id="preferences" name="preferences" class="form-control" rows="2" placeholder="Describe your style preferences, materials, colors, etc.">Casual minimalist with metal accents</textarea>
+          </div>
+
+          <h3 style="font-size:1rem; font-weight:700; margin:1.5rem 0 1rem; border-bottom:1px solid var(--border-color); padding-bottom:0.5rem;">
+            Upload Outfit Image (Optional)
+          </h3>
+          <div class="form-group">
+            <input type="file" id="imageInput" name="image" accept="image/*" class="form-control">
+          </div>
+
+          <button type="submit" id="submitBtn" class="btn btn-primary" style="width:100%; padding:0.75rem;">
+            Get Recommendations
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Results Container -->
+    <div id="results" style="display:none; margin-top:2rem;">
+      <h2 style="font-size:1.5rem; font-weight:800; margin-bottom:1rem;">Your Personalized Jewelry Recommendations</h2>
+      
+      <div class="card" style="background:#152449; color:#fff; padding:1.5rem; display:flex; justify-content:space-between;">
+        <div>
+          <span style="font-size:0.8rem; color:#93c5fd;">Total Budget</span>
+          <div style="font-size:1.5rem; font-weight:800;" id="resTotal">₹0</div>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:0.8rem; color:#86efac;">Remaining Budget</span>
+          <div style="font-size:1.5rem; font-weight:800; color:#4ade80;" id="resRemaining">₹0</div>
+        </div>
+      </div>
+
+      <div class="card" id="outfitAnalysisCard" style="display:none;">
+        <div class="card-header">Outfit Analysis</div>
+        <div class="card-body" id="outfitAnalysisContent" style="font-size:0.85rem;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Jewelry Recommendations</div>
+        <div class="card-body" id="jewelryList" style="padding:0;"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">Styling Tips</div>
+        <div class="card-body" id="stylingTips" style="font-size:0.85rem; color:var(--text-muted);"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('jewelryForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('submitBtn');
+      btn.innerText = "Analyzing outfit & style with Gemini AI...";
+      btn.disabled = true;
+
+      try {
+        const formData = new FormData(document.getElementById('jewelryForm'));
+        const res = await fetch('/generate-jewelry', {
+          method: 'POST',
+          body: formData
+        });
+        const data = await res.json();
+
+        document.getElementById('resTotal').innerText = `₹${data.total_budget}`;
+        document.getElementById('resRemaining').innerText = `₹${data.remaining_budget}`;
+
+        if (data.outfit_analysis) {
+          document.getElementById('outfitAnalysisCard').style.display = 'block';
+          document.getElementById('outfitAnalysisContent').innerHTML = `
+            <p><strong>Colors:</strong> ${data.outfit_analysis.colors.join(', ')}</p>
+            <p><strong>Style:</strong> ${data.outfit_analysis.style}</p>
+            <p><strong>Formality:</strong> ${data.outfit_analysis.formality}</p>
+          `;
+        }
+
+        const jl = document.getElementById('jewelryList');
+        jl.innerHTML = '';
+        (data.jewelry_recommendations || []).forEach(item => {
+          let linksHtml = '';
+          for (const [k, url] of Object.entries(item.shopping_links || {})) {
+            linksHtml += `<a href="${url}" target="_blank" class="shop-tag">${k}</a> `;
+          }
+          jl.innerHTML += `<div style="padding:1rem 1.5rem; border-bottom:1px solid #f1f5f9;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <h4 style="font-size:1rem; font-weight:700; text-transform:capitalize;">${item.item_type}</h4>
+              <span class="btn btn-primary" style="padding:0.25rem 0.6rem; font-size:0.8rem;">₹${item.estimated_price}</span>
+            </div>
+            <p style="font-size:0.85rem; color:var(--text-dark); margin:0.3rem 0;">${item.description}</p>
+            <p style="font-size:0.8rem; color:var(--text-muted);">Style: ${item.style}</p>
+            <div style="margin-top:0.5rem;">
+              <span style="font-size:0.75rem; font-weight:600;">Shop on:</span>
+              <div class="shop-links">${linksHtml}</div>
+            </div>
+          </div>`;
+        });
+
+        const st = document.getElementById('stylingTips');
+        st.innerHTML = (data.styling_tips || []).map(tip => `<p style="margin-bottom:0.4rem;">• ${tip}</p>`).join('');
+
+        document.getElementById('results').style.display = 'block';
+        window.scrollTo({ top: document.getElementById('results').offsetTop, behavior: 'smooth' });
+      } catch (err) {
+        alert("Error generating recommendations: " + err.message);
+      } finally {
+        btn.innerText = "Get Recommendations";
+        btn.disabled = false;
+      }
+    };
+  </script>
+</body>
+</html>
